@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from django.utils.translation import ugettext as _
 from django.db import models
+from collections import OrderedDict
 
 
 class Category(models.Model):
@@ -18,7 +19,6 @@ class Category(models.Model):
         _curr = self.parent
         while _curr is not None:
             _parents.append(_curr)
-            # _curr = Category.objects.get(pk=_curr.pk).parent
             _curr = _curr.parent
 
         return _parents
@@ -32,23 +32,22 @@ class Category(models.Model):
         return exclude
 
     def get_json(self):
-        json = {
-            'id': self.id,
-            'name': self.name,
-            'parents': (self.get_list(self.parents())),
-            'children': (self.get_list(self.children())),
-            'siblings': (self.get_list(self.siblings())),
-        }
-        return json
+        return OrderedDict([
+            (
+                "id", self.id
+            ), (
+                "name", self.name
+            ), (
+                "parents", (self.get_list(self.parents())),
+            ), (
+                "children", (self.get_list(self.children())),
+            ), (
+                "siblings", (self.get_list(self.siblings())),
+            )
+        ])
 
     def get_list(self, _list):
-        parents = []
-        for item in _list:
-            parents.append({
-                "id": item.id,
-                "name": item.name,
-            })
-        return parents
+        return [OrderedDict([("id", item.id), ("name", item.name)]) for item in _list]
 
     @staticmethod
     def create_category(in_json, parent=None):
